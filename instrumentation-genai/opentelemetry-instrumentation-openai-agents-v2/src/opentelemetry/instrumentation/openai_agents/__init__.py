@@ -204,8 +204,9 @@ class OpenAIAgentsInstrumentor(BaseInstrumentor):
             def _wrap_init(wrapped: Any, instance: Any, args: Any, kwargs: Any) -> Any:
                 wrapped(*args, **kwargs)
                 try:
-                    agent_name = getattr(instance._current_agent, "name", None)
-                    handler = RealtimeTelemetryHandler(agent_name=agent_name)
+                    handler = RealtimeTelemetryHandler(
+                        tracer=tracer,
+                    )
                     setattr(instance.model, _OTEL_HANDLER_ATTR, handler)
                     logger.debug("Attached realtime telemetry handler to model %s", instance.model)
                 except Exception:
@@ -230,7 +231,7 @@ class OpenAIAgentsInstrumentor(BaseInstrumentor):
                 if handler is not None:
                     event = args[0] if args else kwargs.get("event")
                     if event is not None:
-                        ctx = await handler.handle_event(event)
+                        ctx = handler.handle_event(event)
                         if ctx is not None:
                             token = context_api.attach(ctx)
                             try:
